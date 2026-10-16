@@ -185,13 +185,20 @@ public class CofreService {
                                       PrivateKey userPriv) throws CofreException {
         reg.log(Mensagens.ARQ_SELECIONADO, u, e.nomeSecreto);
 
-        // Reaplica a política de acesso (defesa em profundidade).
-        boolean permitido = e.dono.equalsIgnoreCase(u.email)
-                || e.grupo.equalsIgnoreCase(u.grupoNome)
-                || e.idCompartilhamento != null;
-        if (!permitido || !listagem.entradas.contains(e)) {
+        // Acesso ao CONTEÚDO: apenas o dono ou usuários com compartilhamento.
+        // Pertencer ao grupo do arquivo permite vê-lo na listagem, mas não
+        // decriptá-lo: só o dono (.env) e os compartilhamentos (.N.shr) têm
+        // envelope digital destinado à sua chave pública.
+        boolean dono = e.dono.equalsIgnoreCase(u.email);
+        boolean compartilhado = e.idCompartilhamento != null;
+        if (!listagem.entradas.contains(e) || !(dono || compartilhado)) {
             reg.log(Mensagens.ARQ_ACESSO_NEGADO, u, e.nomeSecreto);
-            throw new CofreException("Você não tem permissão de acesso ao arquivo " + e.nomeSecreto + ".");
+            String msg = "Você não tem permissão de acesso ao arquivo " + e.nomeSecreto + ".";
+            if (e.acesso == TipoAcesso.GRUPO)
+                msg += "\nO arquivo pertence ao seu grupo (" + e.grupo + ") e por isso aparece na listagem, "
+                        + "mas apenas o dono (" + e.dono + ") ou usuários com quem ele compartilhou o "
+                        + "arquivo podem acessar o seu conteúdo.";
+            throw new CofreException(msg);
         }
         reg.log(Mensagens.ARQ_ACESSO_PERMITIDO, u, e.nomeSecreto);
 
@@ -199,9 +206,8 @@ public class CofreService {
 
         // Envelope digital destinado ao usuário: .env (dono) ou .N.shr (compartilhamento).
         List<String> envelopes = new ArrayList<>();
-        if (e.dono.equalsIgnoreCase(u.email)) envelopes.add(e.nomeCodigo + ".env");
-        if (e.idCompartilhamento != null) envelopes.add(e.nomeCodigo + "." + e.idCompartilhamento + ".shr");
-        if (envelopes.isEmpty()) envelopes.add(e.nomeCodigo + ".env"); // acesso apenas pelo grupo
+        if (dono) envelopes.add(e.nomeCodigo + ".env");
+        if (compartilhado) envelopes.add(e.nomeCodigo + "." + e.idCompartilhamento + ".shr");
 
         byte[] plain = null;
         String erro = null;
@@ -216,11 +222,7 @@ public class CofreService {
         if (plain == null) {
             reg.log(Mensagens.ARQ_FALHA_DECRIPTACAO, u, e.nomeSecreto);
             String msg = "Falha na decriptação do arquivo " + e.nomeSecreto + " (sigilo).";
-            if (e.acesso == TipoAcesso.GRUPO)
-                msg += "\nO arquivo pertence ao seu grupo, mas o envelope digital (" + e.nomeCodigo
-                        + ".env) foi gerado para a chave pública do dono (" + e.dono
-                        + ") e não há compartilhamento (.shr) destinado a você.";
-            else if (erro != null)
+            if (erro != null)
                 msg += "\nDetalhe: " + erro;
             throw new CofreException(msg);
         }
