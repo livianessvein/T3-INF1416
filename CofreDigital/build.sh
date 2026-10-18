@@ -7,7 +7,7 @@ CP="lib/bcprov-jdk18on-1.77.jar:lib/sqlite-jdbc-3.46.1.3.jar"
 rm -rf out dist/lib dist/*.jar   # preserva dist/cofre.db
 mkdir -p out dist
 
-javac -encoding UTF-8 -d out -cp "$CP" $(find src -name "*.java")
+javac --release 17 -encoding UTF-8 -d out -cp "$CP" $(find src -name "*.java")
 
 MANIFEST_CP="lib/bcprov-jdk18on-1.77.jar lib/sqlite-jdbc-3.46.1.3.jar"
 

@@ -6,13 +6,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
-/**
- * Teste de integração sem interface gráfica, usando o Pacote-T3.
- *
- * Uso: java -cp "out:lib/*:test-out" TesteIntegracao <pasta_Pacote-T3>
- */
 public class TesteIntegracao {
-
     static int ok = 0, falhas = 0;
 
     static void check(String nome, boolean cond) {
@@ -20,7 +14,6 @@ public class TesteIntegracao {
         else { falhas++; System.out.println("  [FALHA] " + nome); }
     }
 
-    /** Simula o teclado virtual: cada dígito da senha cai num botão com outro dígito aleatório. */
     static List<int[]> simularTeclado(String senha, Random r) {
         List<int[]> pares = new ArrayList<>();
         for (char c : senha.toCharArray()) {
@@ -67,7 +60,6 @@ public class TesteIntegracao {
         check("confirmação diferente recusada", CadastroService.validarSenha("13572468".toCharArray(), "13572469".toCharArray()) != null);
         check("senha válida aceita", CadastroService.validarSenha("13572468".toCharArray(), "13572468".toCharArray()) == null);
 
-        // admin na partida
         CadastroService.Preparado pa = s.cadastro.preparar(keys.resolve("admin-x509.crt").toString(),
                 keys.resolve("admin-pkcs8-aes.key").toString(), "admin".toCharArray(), null);
         check("nome/login extraídos do Sujeito", "Administrator".equals(pa.nome) && "admin@inf1416.puc-rio.br".equals(pa.email));
@@ -137,7 +129,6 @@ public class TesteIntegracao {
         s.auth.registrarTokenOk(u1);
         check("total de acessos incrementado", db.findUsuarioByUid(u1.uid).numAcessos == 1);
 
-        // Bloqueio por 3 erros de senha (user02)
         Database.Usuario u2 = s.auth.verificarLogin("user02@inf1416.puc-rio.br").usuario;
         s.auth.registrarErroSenha(u2);
         s.auth.registrarErroSenha(u2);
@@ -146,7 +137,7 @@ public class TesteIntegracao {
         check("etapa 1: bloqueado", s.auth.verificarLogin("user02@inf1416.puc-rio.br").resultado == AuthService.ResultadoEtapa1.BLOQUEADO);
         long resta = db.findUsuarioByUid(u2.uid).bloqueadoAte - System.currentTimeMillis();
         check("bloqueio de ~2 minutos", resta > 110_000 && resta <= 120_000);
-        db.bloquear(u2.uid, 0); // libera para o restante do teste
+        db.bloquear(u2.uid, 0);
 
         System.out.println("== Consulta da pasta segura ==");
         Path pasta = tmp.resolve("pasta");
@@ -175,7 +166,6 @@ public class TesteIntegracao {
                 nomes(lst.get("user02@inf1416.puc-rio.br")).equals(List.of("teste01.docx", "teste02.docx")));
         check("total de consultas incrementado", db.findUsuarioByEmail("user01@inf1416.puc-rio.br").numConsultas == 1);
 
-        // Decriptação
         PrivateKey pk1 = CadastroService.chavePrivadaDoUsuario(db, u1, "user01".toCharArray(), 10240);
         u1 = db.findUsuarioByUid(u1.uid);
         CofreService.Listagem l1 = lst.get("user01@inf1416.puc-rio.br");
@@ -193,12 +183,12 @@ public class TesteIntegracao {
         Database.Usuario uu2 = db.findUsuarioByEmail("user02@inf1416.puc-rio.br");
         PrivateKey pk2 = CadastroService.chavePrivadaDoUsuario(db, uu2, "user02".toCharArray(), 10240);
         CofreService.Listagem l2 = lst.get("user02@inf1416.puc-rio.br");
-        boolean falhouGrupo = false;
+        String negado = null;
         try { s.cofre.decriptarArquivo(l2, l2.entradas.get(0), uu2, pk2); }
-        catch (CofreService.CofreException ex) { falhouGrupo = true; System.out.println("    (esperado) " + ex.getMessage().split("\n")[0]); }
-        check("user02 (só grupo) não tem envelope para teste01 -> 7020", falhouGrupo);
+        catch (CofreService.CofreException ex) { negado = ex.getMessage(); System.out.println("    (esperado) " + ex.getMessage().split("\n")[0]); }
+        check("user02 (só grupo) vê teste01 na lista, mas acesso ao conteúdo é negado -> 7017",
+                negado != null && negado.contains("permissão"));
 
-        // Integridade: adultera a assinatura do index
         Path pasta2 = tmp.resolve("pasta2");
         Files.createDirectories(pasta2);
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(files)) {
@@ -212,7 +202,6 @@ public class TesteIntegracao {
         catch (CofreService.CofreException ex) { msg = ex.getMessage(); }
         check("index.asd adulterado -> falha de verificação (7008)", msg != null && msg.contains("integridade"));
 
-        // Arquivo adulterado
         byte[] asd11 = Files.readAllBytes(pasta.resolve("XXYYZZ11.asd"));
         asd11[5] ^= 1;
         Files.write(pasta.resolve("XXYYZZ11.asd"), asd11);

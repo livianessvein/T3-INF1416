@@ -6,9 +6,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 
-/** Utilidades visuais compartilhadas pelas telas. */
 final class Ui {
-
     private Ui() {}
 
     static final Color FUNDO = new Color(0xF4F5F7);
@@ -24,7 +22,6 @@ final class Ui {
     static final Font FONTE_TITULO = FONTE.deriveFont(Font.BOLD, 18f);
     static final Font FONTE_TECLA = new Font(Font.MONOSPACED, Font.BOLD, 22);
 
-    /** Seção com título (Cabeçalho, Corpo 1, Corpo 2). */
     static JPanel secao(String titulo, JComponent conteudo) {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(PAINEL);
@@ -38,7 +35,6 @@ final class Ui {
         return p;
     }
 
-    /** Cabeçalho padrão com login, grupo e nome do usuário. */
     static JPanel cabecalho(Database.Usuario u) {
         JPanel p = new JPanel(new GridLayout(3, 1, 0, 2));
         p.add(rotulo("Login: ", u.email));
@@ -65,7 +61,6 @@ final class Ui {
         return secao("Corpo 1", rotulo(chave, valor));
     }
 
-    /** Monta uma tela de três partes: cabeçalho, corpo 1 e corpo 2. */
     static JPanel tela(JComponent cab, JComponent c1, JComponent c2) {
         JPanel p = new JPanel(new GridBagLayout());
         p.setBackground(FUNDO);
@@ -112,7 +107,6 @@ final class Ui {
         JOptionPane.showMessageDialog(pai, msg, "Cofre Digital", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    /** Limita a quantidade de caracteres de um campo de texto. */
     static void limitar(javax.swing.text.JTextComponent campo, int max) {
         ((javax.swing.text.AbstractDocument) campo.getDocument()).setDocumentFilter(
             new javax.swing.text.DocumentFilter() {

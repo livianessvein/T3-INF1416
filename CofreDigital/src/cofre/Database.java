@@ -5,13 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Acesso ao banco SQLite do Cofre Digital.
- *
- * Tabelas: Grupos, Usuarios, Chaveiro, Mensagens e Registros.
- */
 public class Database implements AutoCloseable {
-
     public static final String DEFAULT_FILE = "cofre.db";
 
     public static final int GID_ADMINISTRADOR = 1;
@@ -39,23 +33,23 @@ public class Database implements AutoCloseable {
                 "CREATE TABLE IF NOT EXISTS Usuarios (" +
                 "  UID            INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "  nome           TEXT    NOT NULL," +
-                "  email          TEXT    NOT NULL UNIQUE," +      // login name
+                "  email          TEXT    NOT NULL UNIQUE," +
                 "  GID            INTEGER NOT NULL REFERENCES Grupos(GID)," +
-                "  senha          CHAR(60) NOT NULL," +            // bcrypt $2y$08$...
-                "  token_key      BLOB    NOT NULL," +             // BASE32(segredo TOTP) cifrado AES
-                "  KID            INTEGER," +                      // par ativo no Chaveiro
+                "  senha          CHAR(60) NOT NULL," +
+                "  token_key      BLOB    NOT NULL," +
+                "  KID            INTEGER," +
                 "  num_acessos    INTEGER NOT NULL DEFAULT 0," +
                 "  num_consultas  INTEGER NOT NULL DEFAULT 0," +
                 "  erros_senha    INTEGER NOT NULL DEFAULT 0," +
                 "  erros_token    INTEGER NOT NULL DEFAULT 0," +
-                "  bloqueado_ate  INTEGER NOT NULL DEFAULT 0)");   // epoch ms
+                "  bloqueado_ate  INTEGER NOT NULL DEFAULT 0)");
 
             st.executeUpdate(
                 "CREATE TABLE IF NOT EXISTS Chaveiro (" +
                 "  KID            INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "  UID            INTEGER NOT NULL REFERENCES Usuarios(UID)," +
-                "  certificado    TEXT    NOT NULL," +             // PEM
-                "  chave_privada  BLOB    NOT NULL)");             // binário criptografado
+                "  certificado    TEXT    NOT NULL," +
+                "  chave_privada  BLOB    NOT NULL)");
 
             st.executeUpdate(
                 "CREATE TABLE IF NOT EXISTS Mensagens (" +
@@ -65,11 +59,11 @@ public class Database implements AutoCloseable {
             st.executeUpdate(
                 "CREATE TABLE IF NOT EXISTS Registros (" +
                 "  RID        INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "  data_hora  INTEGER NOT NULL," +                 // epoch ms
+                "  data_hora  INTEGER NOT NULL," +
                 "  MID        INTEGER NOT NULL REFERENCES Mensagens(MID)," +
-                "  UID        INTEGER REFERENCES Usuarios(UID)," + // usuário identificado
-                "  login_name TEXT," +                             // só p/ login não identificado (2005)
-                "  arquivo    TEXT)");                             // arquivo selecionado (7015-7021)
+                "  UID        INTEGER REFERENCES Usuarios(UID)," +
+                "  login_name TEXT," +
+                "  arquivo    TEXT)");
         }
     }
 
@@ -94,10 +88,6 @@ public class Database implements AutoCloseable {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Usuários
-    // ------------------------------------------------------------------
-
     public static class Usuario {
         public int uid;
         public String nome;
@@ -115,7 +105,6 @@ public class Database implements AutoCloseable {
 
         public boolean isAdmin() { return gid == GID_ADMINISTRADOR; }
 
-        /** Nome do grupo para exibição nas telas. */
         public String grupoExibicao() { return isAdmin() ? "Administrador" : "Usuário"; }
 
         public boolean bloqueado() { return bloqueadoAte > System.currentTimeMillis(); }
@@ -163,7 +152,6 @@ public class Database implements AutoCloseable {
         }
     }
 
-    /** Administrador do sistema: o primeiro administrador cadastrado (partida do sistema). */
     public Usuario findAdministradorSistema() throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
                 SELECT_USUARIO + "WHERE u.GID = ? ORDER BY u.UID LIMIT 1")) {
@@ -196,10 +184,6 @@ public class Database implements AutoCloseable {
         return findUsuarioByEmail(email) != null;
     }
 
-    /**
-     * Cadastra o usuário e seu par chave privada/certificado no Chaveiro,
-     * associando o KID gerado ao registro do usuário. Operação atômica.
-     */
     public int inserirUsuario(String nome, String email, int gid, String senhaHash,
                               byte[] tokenKeyCifrada, String certificadoPem,
                               byte[] chavePrivadaCifrada) throws SQLException {
@@ -268,10 +252,6 @@ public class Database implements AutoCloseable {
         exec("UPDATE Usuarios SET num_consultas = num_consultas + 1 WHERE UID = ?", uid);
     }
 
-    // ------------------------------------------------------------------
-    // Chaveiro
-    // ------------------------------------------------------------------
-
     public static class ParChaves {
         public int kid;
         public int uid;
@@ -295,10 +275,6 @@ public class Database implements AutoCloseable {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Registros
-    // ------------------------------------------------------------------
-
     public void inserirRegistro(long dataHora, int mid, Integer uid, String loginName, String arquivo)
             throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
@@ -311,8 +287,6 @@ public class Database implements AutoCloseable {
             ps.executeUpdate();
         }
     }
-
-    // ------------------------------------------------------------------
 
     private void exec(String sql, Object... params) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {

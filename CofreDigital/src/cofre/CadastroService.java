@@ -10,12 +10,7 @@ import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 
-/**
- * Cadastro de usuários (inclusive o administrador na partida do sistema).
- */
 public class CadastroService {
-
-    /** Tamanho do array aleatório assinado para validar a chave privada. */
     public static final int TAMANHO_TESTE_CHAVE = 10240;
 
     private final Database db;
@@ -26,7 +21,6 @@ public class CadastroService {
         this.reg = reg;
     }
 
-    /** Falha de cadastro, com o MID a ser registrado (ou 0 se não houver). */
     public static class CadastroException extends Exception {
         public final int mid;
         public CadastroException(int mid, String msg) {
@@ -35,7 +29,6 @@ public class CadastroService {
         }
     }
 
-    /** Dados validados, prontos para confirmação e gravação. */
     public static class Preparado {
         public X509Certificate certificado;
         public String certificadoPem;
@@ -44,7 +37,6 @@ public class CadastroService {
         public String email;
     }
 
-    /** Resultado de um cadastro efetivado. */
     public static class Efetivado {
         public int uid;
         public String email;
@@ -52,14 +44,6 @@ public class CadastroService {
         public String otpauthUri;
     }
 
-    // ------------------------------------------------------------------
-
-    /**
-     * Crítica da senha pessoal: 8, 9 ou 10 dígitos de 0 a 9, sem dígitos
-     * repetidos em sequência, e igual à confirmação.
-     *
-     * @return mensagem de erro, ou {@code null} se válida
-     */
     public static String validarSenha(char[] senha, char[] confirmacao) {
         if (senha == null || senha.length == 0)
             return "Informe a senha pessoal.";
@@ -75,15 +59,10 @@ public class CadastroService {
         return null;
     }
 
-    /**
-     * Carrega o certificado, decripta a chave privada com a frase secreta e
-     * valida o par assinando 10240 bytes aleatórios.
-     */
     public Preparado preparar(String caminhoCert, String caminhoChave, char[] frase,
                               Database.Usuario operador) throws CadastroException {
         Preparado p = new Preparado();
 
-        // Certificado digital
         X509Certificate cert;
         try {
             Path pc = caminho(caminhoCert);
@@ -101,7 +80,6 @@ public class CadastroService {
                     "O campo Sujeito do certificado não contém nome (CN) e e-mail válidos.");
         }
 
-        // Chave privada
         byte[] chaveCifrada;
         try {
             Path pk = caminho(caminhoChave);
@@ -139,7 +117,6 @@ public class CadastroService {
         return p;
     }
 
-    /** Campos do certificado para a tela de confirmação. */
     public static String[][] camposConfirmacao(X509Certificate c) {
         SimpleDateFormat f = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
         return new String[][] {
@@ -153,10 +130,6 @@ public class CadastroService {
         };
     }
 
-    /**
-     * Grava o usuário: hash bcrypt da senha, segredo TOTP (20 bytes, BASE32,
-     * cifrado com AES-256 derivada da senha) e o par certificado/chave no Chaveiro.
-     */
     public Efetivado efetivar(Preparado p, int gid, char[] senha) throws CadastroException {
         try {
             if (db.emailExiste(p.email))
@@ -188,8 +161,6 @@ public class CadastroService {
         }
     }
 
-    // ------------------------------------------------------------------
-
     private static Path caminho(String s) throws Exception {
         if (s == null || s.trim().isEmpty() || s.length() > 255)
             throw new Exception("caminho inválido");
@@ -199,7 +170,6 @@ public class CadastroService {
         return p;
     }
 
-    /** Restaura e valida a chave privada armazenada no Chaveiro para um usuário. */
     public static PrivateKey chavePrivadaDoUsuario(Database db, Database.Usuario u, char[] frase,
                                                    int tamanhoTeste)
             throws Exception {

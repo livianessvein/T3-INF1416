@@ -11,13 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Consulta da pasta segura: decriptação e verificação dos arquivos index e
- * share (do administrador), aplicação da política de controle de acesso e
- * decriptação/verificação dos arquivos protegidos.
- */
 public class CofreService {
-
     private final Database db;
     private final Registrador reg;
 
@@ -30,17 +24,14 @@ public class CofreService {
         public CofreException(String msg) { super(msg); }
     }
 
-    /** Motivo pelo qual o usuário pode acessar o arquivo. */
     public enum TipoAcesso { DONO, GRUPO, COMPARTILHADO }
 
-    /** Linha do índice visível para o usuário. */
     public static class Entrada {
         public String nomeCodigo;
         public String nomeSecreto;
         public String dono;
         public String grupo;
         public TipoAcesso acesso;
-        /** ID do compartilhamento destinado ao usuário (quando houver). */
         public Integer idCompartilhamento;
     }
 
@@ -51,10 +42,6 @@ public class CofreService {
     }
 
     record LinhaShare(String nomeCodigo, int id, String usuario) {}
-
-    // ------------------------------------------------------------------
-    // Listagem
-    // ------------------------------------------------------------------
 
     public Listagem listar(String caminhoPasta, Database.Usuario u,
                            PrivateKey adminPriv, X509Certificate adminCert) throws CofreException {
@@ -75,7 +62,6 @@ public class CofreService {
         Listagem out = new Listagem();
         out.pasta = pasta;
 
-        // ---- index ----
         byte[] indexPlain;
         try {
             indexPlain = decriptar(pasta, "index", "index.env", adminPriv);
@@ -90,7 +76,6 @@ public class CofreService {
         }
         reg.log(Mensagens.INDEX_VERIFICADO, u);
 
-        // ---- share ----
         List<LinhaShare> shares = new ArrayList<>();
         boolean shareOk = false;
         if (Files.isRegularFile(pasta.resolve("share.enc"))) {
@@ -117,7 +102,6 @@ public class CofreService {
             out.avisos.add("A pasta não possui arquivo de share.");
         }
 
-        // ---- política de controle de acesso ----
         String login = u.email;
         for (String linha : new String(indexPlain, StandardCharsets.US_ASCII).split("\n")) {
             String[] f = linha.trim().split("\\s+");
@@ -135,7 +119,7 @@ public class CofreService {
             } else if (e.grupo.equalsIgnoreCase(u.grupoNome)) {
                 e.acesso = TipoAcesso.GRUPO;
             } else {
-                continue; // sem permissão: não é listado
+                continue;
             }
             if (s != null) e.idCompartilhamento = s.id();
             out.entradas.add(e);
@@ -168,43 +152,30 @@ public class CofreService {
         return out;
     }
 
-    // ------------------------------------------------------------------
-    // Decriptação de um arquivo protegido
-    // ------------------------------------------------------------------
-
     public static class Resultado {
         public Path arquivoGravado;
         public int tamanho;
     }
 
-    /**
-     * Decripta o arquivo protegido escolhido pelo usuário, verifica sua
-     * assinatura com o certificado do dono e grava o conteúdo com o nome secreto.
-     */
     public Resultado decriptarArquivo(Listagem listagem, Entrada e, Database.Usuario u,
                                       PrivateKey userPriv) throws CofreException {
         reg.log(Mensagens.ARQ_SELECIONADO, u, e.nomeSecreto);
 
-        // Acesso ao CONTEÚDO: apenas o dono ou usuários com compartilhamento.
-        // Pertencer ao grupo do arquivo permite vê-lo na listagem, mas não
-        // decriptá-lo: só o dono (.env) e os compartilhamentos (.N.shr) têm
-        // envelope digital destinado à sua chave pública.
         boolean dono = e.dono.equalsIgnoreCase(u.email);
         boolean compartilhado = e.idCompartilhamento != null;
         if (!listagem.entradas.contains(e) || !(dono || compartilhado)) {
             reg.log(Mensagens.ARQ_ACESSO_NEGADO, u, e.nomeSecreto);
             String msg = "Você não tem permissão de acesso ao arquivo " + e.nomeSecreto + ".";
             if (e.acesso == TipoAcesso.GRUPO)
-                msg += "\nO arquivo pertence ao seu grupo (" + e.grupo + ") e por isso aparece na listagem, "
-                        + "mas apenas o dono (" + e.dono + ") ou usuários com quem ele compartilhou o "
-                        + "arquivo podem acessar o seu conteúdo.";
+                msg += "\nO arquivo pertence ao seu grupo (" + e.grupo + ") e por isso aparece na listagem,"
+                        + "\nmas apenas o dono (" + e.dono + ") ou usuários com quem ele"
+                        + "\ncompartilhou o arquivo podem acessar o seu conteúdo.";
             throw new CofreException(msg);
         }
         reg.log(Mensagens.ARQ_ACESSO_PERMITIDO, u, e.nomeSecreto);
 
         Path pasta = listagem.pasta;
 
-        // Envelope digital destinado ao usuário: .env (dono) ou .N.shr (compartilhamento).
         List<String> envelopes = new ArrayList<>();
         if (dono) envelopes.add(e.nomeCodigo + ".env");
         if (compartilhado) envelopes.add(e.nomeCodigo + "." + e.idCompartilhamento + ".shr");
@@ -228,7 +199,6 @@ public class CofreService {
         }
         reg.log(Mensagens.ARQ_DECRIPTADO, u, e.nomeSecreto);
 
-        // Assinatura digital gerada pelo dono do arquivo.
         X509Certificate certDono = null;
         try {
             certDono = CadastroService.certificadoDoUsuario(db, db.findUsuarioByEmail(e.dono));
@@ -243,7 +213,6 @@ public class CofreService {
         }
         reg.log(Mensagens.ARQ_VERIFICADO, u, e.nomeSecreto);
 
-        // Grava o conteúdo decriptado com o nome secreto, na própria pasta.
         try {
             Path nome = Paths.get(e.nomeSecreto).getFileName();
             if (nome == null || !nome.toString().equals(e.nomeSecreto))
@@ -262,11 +231,6 @@ public class CofreService {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Primitivas
-    // ------------------------------------------------------------------
-
-    /** Abre o envelope com a chave privada, gera a chave AES pela semente e decripta o .enc. */
     private static byte[] decriptar(Path pasta, String nomeCodigo, String arquivoEnvelope,
                                     PrivateKey priv) throws Exception {
         byte[] envelope = Files.readAllBytes(pasta.resolve(arquivoEnvelope));

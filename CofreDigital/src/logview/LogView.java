@@ -18,19 +18,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 
-/**
- * logView - programa de apoio para auditoria do Cofre Digital.
- *
- * Programa independente do Cofre Digital. Apenas o administrador pode
- * executá-lo: a autenticação é feita com a chave privada (caminho na linha
- * de comando, frase secreta lida sem eco) validada pela assinatura de um
- * array aleatório de 2048 bytes contra o certificado de um administrador
- * cadastrado. Exibe os registros em ordem cronológica.
- *
- * Uso: java -jar LogView.jar <caminho_da_chave_privada> [arquivo_do_banco]
- */
 public final class LogView {
-
     private static final int TAMANHO_TESTE = 2048;
     private static final int GID_ADMINISTRADOR = 1;
 
@@ -78,12 +66,10 @@ public final class LogView {
         }
     }
 
-    /** Lê a frase secreta do teclado real, sem eco. */
     private static char[] lerFraseSecreta() {
         Console console = System.console();
         if (console != null)
             return console.readPassword("Frase secreta da chave privada: ");
-        // Sem console (ex.: execução dentro de uma IDE): não é possível desligar o eco.
         System.err.println("[aviso] Console indisponível: a frase secreta será lida da entrada padrão.");
         System.err.print("Frase secreta da chave privada: ");
         try {
@@ -94,12 +80,6 @@ public final class LogView {
         }
     }
 
-    /**
-     * Decripta a chave privada e procura o certificado de administrador cuja
-     * chave pública valida a assinatura de 2048 bytes aleatórios.
-     *
-     * @return login name do administrador, ou null
-     */
     private static String autenticar(Connection conn, byte[] chaveCifrada, char[] frase) throws Exception {
         PrivateKey pk;
         try {
@@ -122,7 +102,6 @@ public final class LogView {
         return null;
     }
 
-    /** Exibe os registros em ordem cronológica, com data, hora, código e mensagem. */
     private static void listar(Connection conn) throws Exception {
         SimpleDateFormat data = new SimpleDateFormat("dd/MM/yyyy");
         SimpleDateFormat hora = new SimpleDateFormat("HH:mm:ss.SSS");

@@ -8,15 +8,9 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
-/**
- * Tela de Cadastro. Também usada na partida do sistema (operador == null)
- * para o cadastro do administrador.
- */
 final class TelaCadastro {
-
     private final CofreDigital app;
     private final Sessao s;
-    /** Usuário logado que está cadastrando; null na partida do sistema. */
     private final Database.Usuario operador;
     private final boolean partida;
 
@@ -154,8 +148,6 @@ final class TelaCadastro {
         return b;
     }
 
-    // ------------------------------------------------------------------
-
     private void cadastrar() {
         s.reg.log(Mensagens.CAD_BOTAO_CADASTRAR, operador);
 
@@ -180,7 +172,7 @@ final class TelaCadastro {
 
             if (!confirmar(p.certificado)) {
                 s.reg.log(Mensagens.CAD_CONFIRMACAO_REJEITADA, operador);
-                return; // formulário permanece preenchido
+                return;
             }
             s.reg.log(Mensagens.CAD_CONFIRMACAO_ACEITA, operador);
 
@@ -196,7 +188,6 @@ final class TelaCadastro {
             mostrarSegredoTotp(ef);
 
             if (partida) {
-                // Mantém a frase secreta do administrador em memória.
                 PrivateKey pk;
                 try {
                     pk = CryptoUtil.loadAndValidatePrivateKey(p.chavePrivadaCifrada, fr, p.certificado,
@@ -222,7 +213,6 @@ final class TelaCadastro {
         }
     }
 
-    /** Tela de confirmação com os campos do certificado digital. */
     private boolean confirmar(X509Certificate c) {
         String[][] campos = CadastroService.camposConfirmacao(c);
         JPanel p = new JPanel(new GridBagLayout());
@@ -259,7 +249,6 @@ final class TelaCadastro {
         return s == null ? "" : s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
-    /** Informa ao usuário o segredo TOTP em BASE32 para o Google Authenticator. */
     private void mostrarSegredoTotp(CadastroService.Efetivado ef) {
         JPanel p = new JPanel(new BorderLayout(0, 10));
         p.setBorder(new EmptyBorder(4, 4, 4, 4));

@@ -11,7 +11,7 @@ mkdir out
 if not exist dist mkdir dist
 
 dir /s /b src\*.java > out\sources.txt
-javac -encoding UTF-8 -d out -cp "%CP%" @out\sources.txt || exit /b 1
+javac --release 17 -encoding UTF-8 -d out -cp "%CP%" @out\sources.txt || exit /b 1
 
 set MCP=lib/bcprov-jdk18on-1.77.jar lib/sqlite-jdbc-3.46.1.3.jar
 

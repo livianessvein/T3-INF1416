@@ -1,0 +1,5 @@
+{
+  "java.project.sourcePaths": ["CofreDigital/src", "CofreDigital/test"],
+  "java.project.referencedLibraries": ["CofreDigital/lib/**/*.jar"],
+  "java.project.outputPath": "CofreDigital/out"
+}

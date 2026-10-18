@@ -8,8 +8,6 @@ import java.io.*;
  * specified in RFC 4648, sections 6 and 7.
  *
  * @author Brian Wellington
- *
- * (Classe fornecida no anexo do enunciado do Trabalho 3 - INF1416.)
  */
 public class Base32 {
 

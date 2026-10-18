@@ -8,11 +8,7 @@ import java.util.List;
 import java.util.OptionalInt;
 import java.util.stream.IntStream;
 
-/**
- * Regras das três etapas de autenticação bifator.
- */
 public class AuthService {
-
     public static final int MAX_ERROS = 3;
     public static final long TEMPO_BLOQUEIO_MS = 2 * 60 * 1000L;
 
@@ -23,10 +19,6 @@ public class AuthService {
         this.db = db;
         this.reg = reg;
     }
-
-    // ------------------------------------------------------------------
-    // Etapa 1 - login name
-    // ------------------------------------------------------------------
 
     public enum ResultadoEtapa1 { INVALIDO, NAO_IDENTIFICADO, BLOQUEADO, LIBERADO }
 
@@ -59,17 +51,6 @@ public class AuthService {
         return r;
     }
 
-    // ------------------------------------------------------------------
-    // Etapa 2 - senha pessoal via teclado virtual sobrecarregado
-    // ------------------------------------------------------------------
-
-    /**
-     * Cada pressionamento do teclado virtual informa um par de dígitos
-     * possíveis. A senha real é uma das 2^n combinações; cada combinação é
-     * testada contra o hash bcrypt armazenado (em paralelo).
-     *
-     * @return a senha encontrada ou {@code null}
-     */
     public static char[] encontrarSenha(String hashArmazenado, List<int[]> pares) {
         int n = pares.size();
         if (n < 8 || n > 10) return null;
@@ -78,8 +59,6 @@ public class AuthService {
                 .filter(mask -> {
                     char[] cand = candidato(p, mask);
                     try {
-                        // Senhas com dígitos repetidos em sequência nunca são aceitas
-                        // no cadastro; esses candidatos podem ser descartados.
                         if (temRepeticao(cand)) return false;
                         return CryptoUtil.bcryptCheck(hashArmazenado, cand);
                     } finally {
@@ -105,7 +84,6 @@ public class AuthService {
 
     public enum ResultadoEtapa2 { OK, ERRO, BLOQUEADO }
 
-    /** Contabiliza um erro de senha e bloqueia no terceiro erro consecutivo. */
     public ResultadoEtapa2 registrarErroSenha(Database.Usuario u) throws SQLException {
         u.errosSenha++;
         if (u.errosSenha == 1) reg.log(Mensagens.SENHA_ERRO1, u);
@@ -129,11 +107,6 @@ public class AuthService {
         reg.log(Mensagens.SENHA_OK, u);
     }
 
-    // ------------------------------------------------------------------
-    // Etapa 3 - token TOTP
-    // ------------------------------------------------------------------
-
-    /** Decripta o segredo TOTP (BASE32) do usuário com a chave derivada da senha pessoal. */
     public static String decriptarSegredoTotp(byte[] tokenKeyCifrada, char[] senha) throws Exception {
         SecretKey k = CryptoUtil.aesKeyFromSecret(senha);
         byte[] plain = CryptoUtil.aesDecrypt(tokenKeyCifrada, k);
@@ -170,7 +143,6 @@ public class AuthService {
         return ResultadoEtapa2.ERRO;
     }
 
-    /** Autenticação concluída: zera contadores e soma um acesso. */
     public void registrarTokenOk(Database.Usuario u) throws SQLException {
         reg.log(Mensagens.TOKEN_OK, u);
         db.incrementarAcessos(u.uid);

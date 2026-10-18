@@ -9,16 +9,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
-/**
- * Cofre Digital (Digital Vault) - INF1416, Trabalho 3.
- *
- * Ponto de entrada e janela principal. Controla a partida do sistema, as
- * etapas de autenticação e a navegação entre as telas.
- *
- * Uso: java -jar CofreDigital.jar [arquivo_do_banco]
- */
 public class CofreDigital extends JFrame {
-
     private final Sessao sessao;
 
     public CofreDigital(Sessao sessao) {
@@ -44,25 +35,18 @@ public class CofreDigital extends JFrame {
         repaint();
     }
 
-    // ------------------------------------------------------------------
-    // Partida do sistema
-    // ------------------------------------------------------------------
-
-    /** Primeira execução: cadastro do administrador. */
     void partidaCadastroAdministrador() {
         sessao.reg.log(Mensagens.PARTIDA_CADASTRO_ADMIN);
         trocar(new TelaCadastro(this, null).painel());
         setVisible(true);
     }
 
-    /** Chamado pela tela de cadastro quando o administrador foi cadastrado na partida. */
     void administradorCadastradoNaPartida(char[] frase, PrivateKey chave, X509Certificate cert) {
         sessao.definirAdministrador(frase, chave, cert);
         Arrays.fill(frase, '\0');
         mostrarEtapa1();
     }
 
-    /** Execuções seguintes: valida a frase secreta da chave privada do administrador. */
     boolean partidaOperacaoNormal() {
         sessao.reg.log(Mensagens.PARTIDA_OPERACAO_NORMAL);
         try {
@@ -105,10 +89,6 @@ public class CofreDigital extends JFrame {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Autenticação
-    // ------------------------------------------------------------------
-
     void mostrarEtapa1() {
         sessao.reg.log(Mensagens.AUT1_INICIADA);
         trocar(TelaAutenticacao.etapa1(this));
@@ -132,10 +112,6 @@ public class CofreDigital extends JFrame {
         sessao.iniciarSessao(u);
         mostrarTelaPrincipal();
     }
-
-    // ------------------------------------------------------------------
-    // Tela Principal
-    // ------------------------------------------------------------------
 
     void mostrarTelaPrincipal() {
         sessao.recarregarUsuario();
@@ -195,10 +171,6 @@ public class CofreDigital extends JFrame {
     void mostrarConsulta() {
         trocar(new TelaConsulta(this, sessao.usuario()).painel());
     }
-
-    // ------------------------------------------------------------------
-    // Tela de Saída
-    // ------------------------------------------------------------------
 
     void mostrarSaida() {
         sessao.recarregarUsuario();
@@ -263,8 +235,6 @@ public class CofreDigital extends JFrame {
         dispose();
         System.exit(0);
     }
-
-    // ------------------------------------------------------------------
 
     public static void main(String[] args) {
         String arquivoDb = args.length > 0 ? args[0] : Database.DEFAULT_FILE;

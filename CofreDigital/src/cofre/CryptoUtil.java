@@ -20,18 +20,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
 
-/**
- * Operações criptográficas do Cofre Digital.
- *
- *  - Chave AES-256 derivada de uma semente (frase secreta, senha pessoal ou
- *    semente do envelope digital) via SHA1PRNG + KeyGenerator.
- *  - AES/ECB/PKCS5Padding para chave privada, segredo TOTP e arquivos.
- *  - RSA/ECB/PKCS1Padding para abrir envelopes digitais.
- *  - SHA1withRSA para assinaturas digitais.
- *  - bcrypt 2y custo 8 (OpenBSDBCrypt do BouncyCastle) para a senha pessoal.
- */
 public final class CryptoUtil {
-
     public static final String AES_TRANSFORMATION = "AES/ECB/PKCS5Padding";
     public static final String RSA_TRANSFORMATION = "RSA/ECB/PKCS1Padding";
     public static final String SIGNATURE_ALG = "SHA1withRSA";
@@ -42,7 +31,6 @@ public final class CryptoUtil {
 
     private CryptoUtil() {}
 
-    /** Erro específico de validação da chave privada (mapeia os códigos 6005/6006/6007). */
     public static class KeyValidationException extends Exception {
         public enum Motivo { CAMINHO_INVALIDO, FRASE_INVALIDA, ASSINATURA_INVALIDA }
         public final Motivo motivo;
@@ -52,11 +40,6 @@ public final class CryptoUtil {
         }
     }
 
-    // ------------------------------------------------------------------
-    // AES com chave gerada por SHA1PRNG
-    // ------------------------------------------------------------------
-
-    /** Gera a chave AES de 256 bits a partir de uma semente usando SHA1PRNG. */
     public static SecretKey aesKeyFromSeed(byte[] seed) throws GeneralSecurityException {
         SecureRandom prng = SecureRandom.getInstance("SHA1PRNG");
         prng.setSeed(seed);
@@ -86,14 +69,6 @@ public final class CryptoUtil {
         return c.doFinal(cipherText);
     }
 
-    // ------------------------------------------------------------------
-    // Chave privada e certificado
-    // ------------------------------------------------------------------
-
-    /**
-     * Decripta o arquivo binário da chave privada (AES/ECB/PKCS5, chave via
-     * SHA1PRNG da frase secreta) e restaura o objeto PrivateKey (PKCS8 BASE64).
-     */
     public static PrivateKey decryptPrivateKey(byte[] encryptedKey, char[] fraseSecreta)
             throws KeyValidationException {
         byte[] pemBytes = null;
@@ -128,13 +103,11 @@ public final class CryptoUtil {
         }
     }
 
-    /** Restaura um certificado X.509 a partir dos bytes do arquivo (PEM ou DER). */
     public static X509Certificate loadCertificate(byte[] certBytes) throws GeneralSecurityException {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(certBytes));
     }
 
-    /** Converte o certificado para PEM (apenas o bloco BEGIN/END CERTIFICATE). */
     public static String toPem(X509Certificate cert) throws GeneralSecurityException {
         String b64 = Base64.getMimeEncoder(64, "\n".getBytes(StandardCharsets.US_ASCII))
                            .encodeToString(cert.getEncoded());
@@ -145,10 +118,6 @@ public final class CryptoUtil {
         return loadCertificate(pem.getBytes(StandardCharsets.US_ASCII));
     }
 
-    /**
-     * Testa o par de chaves: assina um array aleatório de {@code size} bytes
-     * com a chave privada e verifica a assinatura com a chave pública do certificado.
-     */
     public static boolean validateKeyPair(PrivateKey priv, PublicKey pub, int size) {
         try {
             byte[] data = new byte[size];
@@ -167,7 +136,6 @@ public final class CryptoUtil {
         }
     }
 
-    /** Decripta a chave privada e valida contra o certificado (10240 bytes no cofre). */
     public static PrivateKey loadAndValidatePrivateKey(byte[] encryptedKey, char[] frase,
                                                        X509Certificate cert, int testSize)
             throws KeyValidationException {
@@ -178,11 +146,6 @@ public final class CryptoUtil {
         return pk;
     }
 
-    // ------------------------------------------------------------------
-    // Envelope e assinatura digital
-    // ------------------------------------------------------------------
-
-    /** Abre o envelope digital (RSA/ECB/PKCS1) e devolve a semente SHA1PRNG. */
     public static byte[] openEnvelope(byte[] envelope, PrivateKey priv) throws GeneralSecurityException {
         Cipher c = Cipher.getInstance(RSA_TRANSFORMATION);
         c.init(Cipher.DECRYPT_MODE, priv);
@@ -200,10 +163,6 @@ public final class CryptoUtil {
         }
     }
 
-    // ------------------------------------------------------------------
-    // bcrypt
-    // ------------------------------------------------------------------
-
     public static String bcryptHash(char[] senha) {
         byte[] salt = new byte[16];
         RANDOM.nextBytes(salt);
@@ -217,10 +176,6 @@ public final class CryptoUtil {
             return false;
         }
     }
-
-    // ------------------------------------------------------------------
-    // Utilidades
-    // ------------------------------------------------------------------
 
     public static byte[] randomBytes(int n) {
         byte[] b = new byte[n];
@@ -240,7 +195,6 @@ public final class CryptoUtil {
         return out;
     }
 
-    /** Extrai um atributo (CN, E, ...) de um nome X.500. */
     public static String dnAttribute(javax.security.auth.x500.X500Principal p,
                                      org.bouncycastle.asn1.ASN1ObjectIdentifier oid) {
         X500Name name = X500Name.getInstance(p.getEncoded());
@@ -263,7 +217,6 @@ public final class CryptoUtil {
         return dnAttribute(c.getIssuerX500Principal(), BCStyle.CN);
     }
 
-    /** DN legível, com rótulo EMAILADDRESS para o OID 1.2.840.113549.1.9.1. */
     public static String readableDN(javax.security.auth.x500.X500Principal p) {
         return p.getName(javax.security.auth.x500.X500Principal.RFC1779,
                 java.util.Map.of("1.2.840.113549.1.9.1", "EMAILADDRESS"));

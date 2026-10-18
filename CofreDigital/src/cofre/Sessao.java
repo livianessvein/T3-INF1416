@@ -4,15 +4,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
-/**
- * Estado em memória do processo do Cofre Digital.
- *
- * A frase secreta e a chave privada do administrador ficam em memória
- * durante toda a execução (para abrir os envelopes de index e share) e são
- * apagadas quando o sistema é encerrado.
- */
 public class Sessao {
-
     public final Database db;
     public final Registrador reg;
     public final AuthService auth;
@@ -23,7 +15,6 @@ public class Sessao {
     private PrivateKey chaveAdmin;
     private X509Certificate certAdmin;
 
-    /** Usuário autenticado na sessão corrente (null fora de sessão). */
     private Database.Usuario usuario;
 
     public Sessao(Database db) {
@@ -59,7 +50,6 @@ public class Sessao {
         }
     }
 
-    /** Recarrega os dados do usuário corrente do banco (contadores). */
     public void recarregarUsuario() {
         if (usuario == null) return;
         try {
@@ -75,7 +65,6 @@ public class Sessao {
         }
     }
 
-    /** Encerramento do sistema: apaga segredos da memória e fecha o banco. */
     public void encerrarSistema() {
         encerrarSessao();
         reg.log(Mensagens.SISTEMA_ENCERRADO);

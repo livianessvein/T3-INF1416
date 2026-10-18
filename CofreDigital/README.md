@@ -7,7 +7,7 @@ auditoria visualizado por um programa separado (logView).
 
 ## Requisitos
 
-- JDK 17 ou superior (testado com OpenJDK 21).
+- JDK 17 ou superior (testado com OpenJDK 21 e Temurin 25). O build gera bytecode para Java 17 (`--release 17`), então os JARs rodam em qualquer Java 17+.
 - Bibliotecas em `lib/` (já incluídas):
   - `bcprov-jdk18on-1.77.jar` — BouncyCastle (`OpenBSDBCrypt` para o bcrypt 2y).
   - `sqlite-jdbc-3.46.1.3.jar` — driver JDBC do SQLite.
@@ -114,16 +114,15 @@ juntando `Mensagens` e substituindo `<login_name>` e `<arq_name>`.
   **Total de consultas:** soma 1 a cada listagem bem-sucedida.
 - **Validação da frase no Listar:** registra 6006/6007, pois o enunciado manda
   validar "da mesma forma que no cadastro" e não define códigos próprios.
-- **Política de acesso:** o usuário vê o arquivo se for o dono, se o grupo do arquivo
-  for o seu, ou se houver linha no `share` com o seu login. O envelope usado é o
-  `.env` (dono) ou o `.N.shr` (compartilhamento).
+- **Política de acesso:** a listagem mostra os arquivos dos quais o usuário é dono, os
+  do seu grupo e os compartilhados com ele. O **conteúdo** só pode ser acessado pelo
+  dono (envelope `.env`) ou por quem recebeu compartilhamento (envelope `.N.shr`). Um
+  arquivo visível apenas por ser do grupo gera "acesso negado" (7017), como explicam os
+  próprios arquivos de teste do professor: "outros integrantes do grupo só poderão
+  visualizar o conteúdo desse arquivo se o dono fizer o respectivo compartilhamento".
 
 ## Limitações conhecidas
 
-- **Acesso só pelo grupo:** o arquivo aparece na lista, mas o `.env` foi gerado para a
-  chave pública do dono. Se não houver `.shr` para o usuário, a decriptação falha
-  (registro 7020) e o motivo é mostrado. Com o pacote, isso acontece com
-  user02 → `teste01.docx`.
 - **QR Code:** não é gerado (o enunciado diz que é opcional). A chave BASE32 e a URI
   `otpauth://` são exibidas para cadastro manual no Google Authenticator, com botão
   "Copiar chave".
@@ -138,6 +137,6 @@ java -cp "out:lib/*:test-out" TesteIntegracao <pasta_do_Pacote-T3>
 ```
 
 Cobre: vetores do RFC 6238, crítica de senha, códigos 6004–6007, unicidade do login,
-etapas 1–3, bloqueio, listagem por usuário, decriptação (dono e compartilhado), falha
-de envelope por grupo e adulteração de `index.asd` e de `.asd` de arquivo
+etapas 1–3, bloqueio, listagem por usuário, decriptação (dono e compartilhado), acesso
+negado ao conteúdo por grupo e adulteração de `index.asd` e de `.asd` de arquivo
 (7008/7021). No Windows, troque `:` por `;` no classpath.

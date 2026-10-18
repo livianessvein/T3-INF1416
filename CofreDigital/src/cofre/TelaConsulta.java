@@ -10,11 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Tela de Consultar Pasta de Arquivos Secretos do Usuário.
- */
 final class TelaConsulta {
-
     private final CofreDigital app;
     private final Sessao s;
     private final Database.Usuario u;
@@ -26,7 +22,6 @@ final class TelaConsulta {
     private final JTable tabela = new JTable(modelo);
 
     private CofreService.Listagem listagem;
-    /** Chave privada do usuário, validada com a frase secreta no Botão Listar. */
     private PrivateKey chaveUsuario;
 
     TelaConsulta(CofreDigital app, Database.Usuario u) {
@@ -131,7 +126,6 @@ final class TelaConsulta {
         listagem = null;
         chaveUsuario = null;
 
-        // Validação da frase secreta, da mesma forma que no cadastro.
         char[] fr = frase.getPassword();
         try {
             if (fr.length == 0) {
@@ -183,8 +177,6 @@ final class TelaConsulta {
             Ui.erro(app, ex.getMessage());
         }
     }
-
-    // ------------------------------------------------------------------
 
     private static final class Modelo extends AbstractTableModel {
         private static final String[] COLS = {"Nome secreto", "Dono", "Grupo", "Acesso"};

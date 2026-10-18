@@ -10,11 +10,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-/**
- * Telas das três etapas de autenticação bifator.
- */
 final class TelaAutenticacao {
-
     private TelaAutenticacao() {}
 
     private static JPanel moldura(String subtitulo, JComponent conteudo) {
@@ -39,10 +35,6 @@ final class TelaAutenticacao {
         p.add(cartao);
         return p;
     }
-
-    // ------------------------------------------------------------------
-    // Etapa 1 - login name
-    // ------------------------------------------------------------------
 
     static JPanel etapa1(CofreDigital app) {
         Sessao s = app.sessao();
@@ -104,10 +96,6 @@ final class TelaAutenticacao {
         return tela;
     }
 
-    // ------------------------------------------------------------------
-    // Etapa 2 - teclado virtual numérico sobrecarregado
-    // ------------------------------------------------------------------
-
     static JPanel etapa2(CofreDigital app, Database.Usuario u) {
         return new TecladoVirtual(app, u).tela;
     }
@@ -140,7 +128,6 @@ final class TelaAutenticacao {
             linhaVisor.add(visor);
             c.add(linhaVisor, BorderLayout.NORTH);
 
-            // Layout dos slides: 3 teclas + OK na primeira linha, 2 teclas + LIMPAR na segunda.
             JPanel grade = new JPanel(new GridLayout(2, 4, 10, 10));
             grade.setOpaque(false);
             for (int i = 0; i < 5; i++) {
@@ -168,7 +155,6 @@ final class TelaAutenticacao {
             atualizarVisor();
         }
 
-        /** Distribui aleatoriamente e sem repetição os dígitos 0-9 entre os cinco botões. */
         void redistribuir() {
             List<Integer> d = new ArrayList<>();
             for (int i = 0; i <= 9; i++) d.add(i);
@@ -259,10 +245,6 @@ final class TelaAutenticacao {
             }.execute();
         }
     }
-
-    // ------------------------------------------------------------------
-    // Etapa 3 - token TOTP
-    // ------------------------------------------------------------------
 
     static JPanel etapa3(CofreDigital app, Database.Usuario u, char[] senha) {
         Sessao s = app.sessao();

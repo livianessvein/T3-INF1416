@@ -4,12 +4,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Tabela de Mensagens de Registro (anexo do enunciado). Os textos são
- * gravados apenas na tabela Mensagens; a tabela Registros guarda só o MID.
- */
 public final class Mensagens {
-
     private Mensagens() {}
 
     public static final int SISTEMA_INICIADO = 1001;
