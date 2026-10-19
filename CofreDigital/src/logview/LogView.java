@@ -1,3 +1,8 @@
+/*
+ * Livian Essvein - 2211667
+ * Breno Lois Matos - 2210780
+ */
+
 package logview;
 
 import cofre.CryptoUtil;

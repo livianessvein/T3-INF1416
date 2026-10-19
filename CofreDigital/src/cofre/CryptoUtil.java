@@ -1,3 +1,8 @@
+/*
+ * Livian Essvein - 2211667
+ * Breno Lois Matos - 2210780
+ */
+
 package cofre;
 
 import org.bouncycastle.asn1.ASN1Encodable;

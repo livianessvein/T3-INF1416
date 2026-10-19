@@ -1,5 +1,7 @@
 # Cofre Digital (Digital Vault) — INF1416, Trabalho 3
 
+**Dupla:** Livian Essvein (2211667) e Breno Lois Matos (2210780)
+
 Aplicação Java SE (Swing + SQLite) que protege uma pasta segura com controle de
 integridade, autenticidade, sigilo e acesso, com autenticação bifator (senha pessoal
 por teclado virtual sobrecarregado + TOTP do Google Authenticator) e registro de
