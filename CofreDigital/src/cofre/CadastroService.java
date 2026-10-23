@@ -3,6 +3,7 @@
  * Breno Lois Matos - 2210780
  */
 
+// TOTP
 package cofre;
 
 import javax.crypto.SecretKey;

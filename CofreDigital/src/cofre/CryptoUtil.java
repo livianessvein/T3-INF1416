@@ -47,9 +47,9 @@ public final class CryptoUtil {
 
     public static SecretKey aesKeyFromSeed(byte[] seed) throws GeneralSecurityException {
         SecureRandom prng = SecureRandom.getInstance("SHA1PRNG");
-        prng.setSeed(seed);
+        prng.setSeed(seed); //frase secreta
         KeyGenerator kg = KeyGenerator.getInstance("AES");
-        kg.init(256, prng);
+        kg.init(256, prng); 
         return kg.generateKey();
     }
 
@@ -74,6 +74,7 @@ public final class CryptoUtil {
         return c.doFinal(cipherText);
     }
 
+    // abre o .key
     public static PrivateKey decryptPrivateKey(byte[] encryptedKey, char[] fraseSecreta)
             throws KeyValidationException {
         byte[] pemBytes = null;
@@ -123,6 +124,7 @@ public final class CryptoUtil {
         return loadCertificate(pem.getBytes(StandardCharsets.US_ASCII));
     }
 
+    // prova que a chave combina com o certificado
     public static boolean validateKeyPair(PrivateKey priv, PublicKey pub, int size) {
         try {
             byte[] data = new byte[size];
@@ -141,11 +143,12 @@ public final class CryptoUtil {
         }
     }
 
+    // Chama decryptPrivateKey e depois validateKeyPair
     public static PrivateKey loadAndValidatePrivateKey(byte[] encryptedKey, char[] frase,
                                                        X509Certificate cert, int testSize)
             throws KeyValidationException {
         PrivateKey pk = decryptPrivateKey(encryptedKey, frase);
-        if (!validateKeyPair(pk, cert.getPublicKey(), testSize))
+        if (!validateKeyPair(pk, cert.getPublicKey(), testSize)) // compara se combina
             throw new KeyValidationException(KeyValidationException.Motivo.ASSINATURA_INVALIDA,
                     "A chave privada não corresponde à chave pública do certificado.");
         return pk;

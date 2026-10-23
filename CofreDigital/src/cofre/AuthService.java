@@ -3,6 +3,7 @@
  * Breno Lois Matos - 2210780
  */
 
+// cria o TOTP e usa uma janela de 30 segundos para validar o código e compara com o token informado
 package cofre;
 
 import javax.crypto.SecretKey;
@@ -56,7 +57,7 @@ public class AuthService {
         return r;
     }
 
-    public static char[] encontrarSenha(String hashArmazenado, List<int[]> pares) {
+    public static char[] encontrarSenha(String hashArmazenado, List<int[]> pares) { //monta as combinacoes 
         int n = pares.size();
         if (n < 8 || n > 10) return null;
         int[][] p = pares.toArray(new int[0][]);

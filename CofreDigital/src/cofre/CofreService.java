@@ -69,7 +69,7 @@ public class CofreService {
 
         byte[] indexPlain;
         try {
-            indexPlain = decriptar(pasta, "index", "index.env", adminPriv);
+            indexPlain = decriptar(pasta, "index", "index.env", adminPriv); // descriptografa
         } catch (Exception e) {
             reg.log(Mensagens.INDEX_FALHA_DECRIPTACAO, u);
             throw new CofreException("Falha na decriptação do arquivo de índice (sigilo): " + e.getMessage());
